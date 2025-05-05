@@ -22,25 +22,23 @@ jobs:
           python -m pip install --upgrade pip
           pip install moviepy whisper tqdm numpy pyinstaller
 
-      - name: 新增 MoviePy 自訂 Hook
+      - name: 建立 hooks 目錄並新增 hook-moviepy.py
         run: |
           mkdir hooks
-          cat << 'EOF' > hooks/hook-moviepy.py
-from PyInstaller.utils.hooks import collect_submodules, collect_data_files
-hiddenimports = collect_submodules('moviepy')
-datas = collect_data_files('moviepy', include_py_files=True)
-EOF
+          echo from PyInstaller.utils.hooks import collect_submodules, collect_data_files > hooks\hook-moviepy.py
+          echo hiddenimports = collect_submodules('moviepy') >> hooks\hook-moviepy.py
+          echo datas = collect_data_files('moviepy', include_py_files=True) >> hooks\hook-moviepy.py
 
       - name: 執行 PyInstaller 打包
         run: |
-          pyinstaller --clean --onefile --noconsole \
-            --additional-hooks-dir hooks \
-            --collect-all whisper \
-            --collect-all imageio_ffmpeg \
-            --name VoiceCutterGUI \
+          pyinstaller --clean --onefile --noconsole ^
+            --additional-hooks-dir hooks ^
+            --collect-all whisper ^
+            --collect-all imageio_ffmpeg ^
+            --name VoiceCutterGUI ^
             voice_cutter_gui.py
 
-      - name: 上傳 Artifacts
+      - name: 上傳 Windows 可執行檔
         uses: actions/upload-artifact@v3
         with:
           name: VoiceCutterGUI.exe
