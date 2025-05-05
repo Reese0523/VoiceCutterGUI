@@ -2,20 +2,19 @@ version: 1.0.{build}
 image: Visual Studio 2022
 
 install:
-  # 升級 pip 並安裝相依
   - python -m pip install --upgrade pip
   - pip install moviepy whisper tqdm numpy pyinstaller
 
-  # 只在 hooks 不存在時才建立，並新增 hook-moviepy.py
+  # 如果 hooks 資料夾已存在，就不再建立
   - if not exist hooks mkdir hooks
   - echo from PyInstaller.utils.hooks import collect_submodules, collect_data_files > hooks\hook-moviepy.py
   - echo hiddenimports = collect_submodules('moviepy') >> hooks\hook-moviepy.py
   - echo datas = collect_data_files('moviepy', include_py_files=True) >> hooks\hook-moviepy.py
 
 build_script:
-  # 執行 PyInstaller 打包
   - pyinstaller --clean --onefile --noconsole ^
       --additional-hooks-dir hooks ^
+      --collect-all moviepy ^        # <— 加這行，保證把 moviepy 全帶進去
       --collect-all whisper ^
       --collect-all imageio_ffmpeg ^
       --name VoiceCutterGUI ^
