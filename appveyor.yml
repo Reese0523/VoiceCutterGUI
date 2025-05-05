@@ -2,24 +2,22 @@ version: 1.0.{build}
 image: Visual Studio 2022
 
 install:
-  # 升級 pip 並安裝所有相依
+  # Pin moviepy 到 1.0.3，並安裝其他依賴
   - python -m pip install --upgrade pip
-  - pip install moviepy whisper tqdm numpy pyinstaller
+  - pip install moviepy==1.0.3 whisper tqdm numpy pyinstaller
 
-  # 只在 hooks 不存在時才建立，並新增解決 MoviePy 動態匯入的 custom hook
+  # 建立自訂 hook 目錄（若已存在則跳過），解決動態匯入問題
   - if not exist hooks mkdir hooks
   - echo from PyInstaller.utils.hooks import collect_submodules, collect_data_files > hooks\hook-moviepy.py
   - echo hiddenimports = collect_submodules('moviepy') >> hooks\hook-moviepy.py
   - echo datas = collect_data_files('moviepy', include_py_files=True) >> hooks\hook-moviepy.py
 
 build_script:
-  # 用 one-dir 模式打包，確保 moviepy.editor 及所有資料都在 dist\VoiceCutterGUI\ 資料夾
-  - pyinstaller --clean --onedir --noconsole --additional-hooks-dir hooks --collect-all whisper --collect-all imageio_ffmpeg --name VoiceCutterGUI voice_cutter_gui.py
-
-  # 壓縮整個 dist\VoiceCutterGUI\ 生成 zip
+  # 使用 one-dir 模式並強制收集整個 moviepy 1.0.3
+  - pyinstaller --clean --onedir --noconsole --additional-hooks-dir hooks --collect-all moviepy --collect-all whisper --collect-all imageio_ffmpeg --name VoiceCutterGUI voice_cutter_gui.py
+  # 壓縮整個資料夾
   - powershell -Command "Compress-Archive -Path '.\\dist\\VoiceCutterGUI\\*' -DestinationPath '.\\dist\\VoiceCutterGUI.zip'"
 
 artifacts:
-  # 將 ZIP 上傳為 artifact，下載後解壓就能直接執行
   - path: dist\VoiceCutterGUI.zip
     name: VoiceCutterGUI
