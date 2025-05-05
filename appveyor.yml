@@ -6,14 +6,14 @@ install:
   - python -m pip install --upgrade pip
   - pip install moviepy whisper tqdm numpy pyinstaller
 
-  # 建立 custom hook 目錄，解決 MoviePy 動態匯入問題
-  - mkdir hooks
+  # 只在 hooks 不存在時才建立，並新增 hook-moviepy.py
+  - if not exist hooks mkdir hooks
   - echo from PyInstaller.utils.hooks import collect_submodules, collect_data_files > hooks\hook-moviepy.py
   - echo hiddenimports = collect_submodules('moviepy') >> hooks\hook-moviepy.py
   - echo datas = collect_data_files('moviepy', include_py_files=True) >> hooks\hook-moviepy.py
 
 build_script:
-  # 用預設的 python 執行 PyInstaller 打包
+  # 執行 PyInstaller 打包
   - pyinstaller --clean --onefile --noconsole ^
       --additional-hooks-dir hooks ^
       --collect-all whisper ^
@@ -22,6 +22,5 @@ build_script:
       voice_cutter_gui.py
 
 artifacts:
-  # 打包完成後，將 dist\VoiceCutterGUI.exe 上傳為 artifact
   - path: dist\VoiceCutterGUI.exe
     name: VoiceCutterGUI.exe
