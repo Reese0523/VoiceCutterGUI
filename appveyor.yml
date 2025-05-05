@@ -1,0 +1,34 @@
+version: 1.0.{build}
+image: Visual Studio 2022
+
+environment:
+  # 指定 Python 版本（必要時改成 3.10.x）
+  PYTHON: C:\Python310
+
+install:
+  # 安裝 Python（若已有可註解掉）
+  - choco install python --version=3.10.12 -y
+  - refreshenv
+  
+  # 升級 pip 並安裝相依
+  - python -m pip install --upgrade pip
+  - pip install moviepy whisper tqdm numpy pyinstaller
+
+  # 建立 custom hook 目錄，解決 MoviePy 動態匯入問題
+  - mkdir hooks
+  - echo from PyInstaller.utils.hooks import collect_submodules, collect_data_files > hooks\hook-moviepy.py
+  - echo hiddenimports = collect_submodules('moviepy') >> hooks\hook-moviepy.py
+  - echo datas = collect_data_files('moviepy', include_py_files=True) >> hooks\hook-moviepy.py
+
+build_script:
+  # 執行打包
+  - pyinstaller --clean --onefile --noconsole ^
+      --additional-hooks-dir hooks ^
+      --collect-all whisper ^
+      --collect-all imageio_ffmpeg ^
+      --name VoiceCutterGUI ^
+      voice_cutter_gui.py
+
+artifacts:
+  - path: dist\VoiceCutterGUI.exe
+    name: VoiceCutterGUI.exe
