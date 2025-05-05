@@ -39,7 +39,7 @@ jobs:
             voice_cutter_gui.py
 
       - name: 上傳 Windows 可執行檔
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v2
         with:
-          name: VoiceCutterGUI.exe
+          name: VoiceCutterGUI
           path: dist/VoiceCutterGUI.exe
