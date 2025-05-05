@@ -1,15 +1,7 @@
 version: 1.0.{build}
 image: Visual Studio 2022
 
-environment:
-  # 指定 Python 版本（必要時改成 3.10.x）
-  PYTHON: C:\Python310
-
 install:
-  # 安裝 Python（若已有可註解掉）
-  - choco install python --version=3.10.12 -y
-  - refreshenv
-  
   # 升級 pip 並安裝相依
   - python -m pip install --upgrade pip
   - pip install moviepy whisper tqdm numpy pyinstaller
@@ -21,7 +13,7 @@ install:
   - echo datas = collect_data_files('moviepy', include_py_files=True) >> hooks\hook-moviepy.py
 
 build_script:
-  # 執行打包
+  # 用預設的 python 執行 PyInstaller 打包
   - pyinstaller --clean --onefile --noconsole ^
       --additional-hooks-dir hooks ^
       --collect-all whisper ^
@@ -30,5 +22,6 @@ build_script:
       voice_cutter_gui.py
 
 artifacts:
+  # 打包完成後，將 dist\VoiceCutterGUI.exe 上傳為 artifact
   - path: dist\VoiceCutterGUI.exe
     name: VoiceCutterGUI.exe
