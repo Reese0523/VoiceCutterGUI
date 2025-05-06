@@ -1,16 +1,26 @@
 version: 1.0.{build}
+# 使用最新的 Visual Studio 2022 Windows Runner
 image: Visual Studio 2022
 
 install:
-  # 安装 CI 上需要的 Python package
+  # 升级 pip 并安装所有 Python 依赖（Nuitka + 运行时库）
   - python -m pip install --upgrade pip
   - pip install nuitka moviepy whisper tqdm numpy imageio_ffmpeg
 
 build_script:
-  # 调用上面那个 bat 脚本（它会编译出 voice_cutter_gui.exe）
-  - call build_nuitka.bat
+  # 直接调用 Nuitka 打包为 single-file EXE
+  - python -m nuitka ^
+      --standalone ^
+      --onefile ^
+      --windows-console-mode=disable ^
+      --enable-plugin=tk-inter ^
+      --assume-yes-for-downloads ^
+      --include-package=moviepy ^
+      --include-package=whisper ^
+      --include-package=imageio_ffmpeg ^
+      voice_cutter_gui.py
 
 artifacts:
-  # 上传最终的 EXE 作为 artifact
+  # 上传所有 exe（即上一步生成的 single-file）
   - path: voice_cutter_gui.exe
     name: VoiceCutterGUI.exe
