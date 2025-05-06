@@ -2,26 +2,22 @@ version: 1.0.{build}
 image: Visual Studio 2022
 
 install:
-  # 升级 pip 并安装打包依赖
   - python -m pip install --upgrade pip
   - pip install nuitka moviepy whisper tqdm numpy imageio_ffmpeg
 
 build_script:
-  # （可选）若你写了 build_nuitka.bat，则直接调用它：
-  # - call build_nuitka.bat
-
-  # 否则直接在 CI 里写打包命令，使用 Nuitka 生成 single-file EXE
-  - python -m nuitka --standalone --onefile --windows-disable-console --enable-plugin=tk-inter ^
+  - python -m nuitka ^
+      --standalone ^
+      --onefile ^
+      --windows-console-mode=disable ^
+      --enable-plugin=tk-inter ^
       --include-package=moviepy ^
       --include-package=whisper ^
       --include-package=imageio_ffmpeg ^
+      --assume-yes-for-downloads ^      # <— 这一行加上
       voice_cutter_gui.py
-
-  # 打包输出会放在 voice_cutter_gui.exe
-  # 如果你想更改文件名：
-  # - ren voice_cutter_gui.exe VoiceCutterGUI.exe
+  - powershell -Command "Compress-Archive -Path '.\\voice_cutter_gui.exe' -DestinationPath '.\\VoiceCutterGUI.zip'"
 
 artifacts:
-  # 把 EXE 上传为 Artifact，名称 VoiceCutterGUI.exe
-  - path: voice_cutter_gui.exe
-    name: VoiceCutterGUI.exe
+  - path: VoiceCutterGUI.zip
+    name: VoiceCutterGUI
