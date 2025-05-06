@@ -2,26 +2,22 @@ version: 1.0.{build}
 image: Visual Studio 2022
 
 install:
-  # 升级 pip 并安装打包依赖
+  # Pin moviepy 到 1.0.3，並安裝其他依賴
   - python -m pip install --upgrade pip
-  - pip install nuitka moviepy whisper tqdm numpy imageio_ffmpeg
+  - pip install moviepy==1.0.3 whisper tqdm numpy pyinstaller
+
+  # 建立自訂 hook 目錄（若已存在則跳過），解決動態匯入問題
+  - if not exist hooks mkdir hooks
+  - echo from PyInstaller.utils.hooks import collect_submodules, collect_data_files > hooks\hook-moviepy.py
+  - echo hiddenimports = collect_submodules('moviepy') >> hooks\hook-moviepy.py
+  - echo datas = collect_data_files('moviepy', include_py_files=True) >> hooks\hook-moviepy.py
 
 build_script:
-  # （可选）若你写了 build_nuitka.bat，则直接调用它：
-  # - call build_nuitka.bat
-
-  # 否则直接在 CI 里写打包命令，使用 Nuitka 生成 single-file EXE
-  - python -m nuitka --standalone --onefile --windows-disable-console --enable-plugin=tk-inter ^
-      --include-package=moviepy ^
-      --include-package=whisper ^
-      --include-package=imageio_ffmpeg ^
-      voice_cutter_gui.py
-
-  # 打包输出会放在 voice_cutter_gui.exe
-  # 如果你想更改文件名：
-  # - ren voice_cutter_gui.exe VoiceCutterGUI.exe
+  # 使用 one-dir 模式並強制收集整個 moviepy 1.0.3
+  - pyinstaller --clean --onedir --noconsole --additional-hooks-dir hooks --collect-all moviepy --collect-all whisper --collect-all imageio_ffmpeg --name VoiceCutterGUI voice_cutter_gui.py
+  # 壓縮整個資料夾
+  - powershell -Command "Compress-Archive -Path '.\\dist\\VoiceCutterGUI\\*' -DestinationPath '.\\dist\\VoiceCutterGUI.zip'"
 
 artifacts:
-  # 把 EXE 上传为 Artifact，名称 VoiceCutterGUI.exe
-  - path: voice_cutter_gui.exe
-    name: VoiceCutterGUI.exe
+  - path: dist\VoiceCutterGUI.zip
+    name: VoiceCutterGUI
