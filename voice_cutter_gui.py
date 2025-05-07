@@ -78,4 +78,6 @@ class VoiceCutterGUI:
 
 if __name__ == '__main__':
     log('Launching GUI')
-    tk.Tk().mainloop()
+    root = tk.Tk()
+    VoiceCutterGUI(root)
+    root.mainloop()
