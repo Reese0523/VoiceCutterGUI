@@ -2,7 +2,7 @@ import os
 import sys
 import traceback
 
-# 設定日誌檔路徑（one-dir 模式下使用 __file__）
+# 設定日誌檔路徑（one-dir 模式使用 __file__ 或執行檔目錄）
 base_dir = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.dirname(__file__)
 LOG = os.path.join(base_dir, 'build_debug.log')
 
@@ -19,8 +19,12 @@ log(f"==== STARTING: {'EXE' if getattr(sys, 'frozen', False) else 'SCRIPT'} ====
 # 全域例外勾掛，將未捕捉例外記錄到日誌並顯示
 def excepthook(exc_type, exc_value, exc_tb):
     log('----- UNCAUGHT EXCEPTION -----')
-    with open(LOG, 'a', encoding='utf-8') as f:
-        traceback.print_exception(exc_type, exc_value, exc_tb, file=f)
+    try:
+        with open(LOG, 'a', encoding='utf-8') as f:
+            traceback.print_exception(exc_type, exc_value, exc_tb, file=f)
+    except Exception:
+        pass
+    # 在 attach console 模式下也顯示
     sys.__excepthook__(exc_type, exc_value, exc_tb)
 sys.excepthook = excepthook
 
