@@ -2,7 +2,7 @@ import os
 import sys
 import traceback
 
-# 設定日誌檔路徑（one-dir 模式使用 __file__ 或執行檔目錄）
+# 設定日誌檔路徑（one-dir 模式使用 sys.executable 所在目錄）
 base_dir = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.dirname(__file__)
 LOG = os.path.join(base_dir, 'build_debug.log')
 
@@ -24,7 +24,6 @@ def excepthook(exc_type, exc_value, exc_tb):
             traceback.print_exception(exc_type, exc_value, exc_tb, file=f)
     except Exception:
         pass
-    # 在 attach console 模式下也顯示
     sys.__excepthook__(exc_type, exc_value, exc_tb)
 sys.excepthook = excepthook
 
@@ -74,12 +73,18 @@ class VoiceCutterGUI:
             audio = clip.audio
             tmp = os.path.join(self.folder, "__tmp.wav")
             audio.write_audiofile(tmp, logger=None)
-            res = self.model.transcribe(tmp)
+            try:
+                res = self.model.transcribe(tmp)
+            except Exception as e:
+                log(f"Transcribe error: {e}")
+                continue
             os.remove(tmp)
-            segs = [clip.subclip(s['start'], s['end']) for s in res['segments']]
+            segs = [clip.subclip(s['start'], s['end']) for s in res.get('segments', [])]
             if segs:
                 final = concatenate_videoclips(segs)
-                final.write_videofile(os.path.join(out_dir, f), codec="libx264", audio_codec="aac", logger=None)
+                final.write_videofile(
+                    os.path.join(out_dir, f), codec="libx264", audio_codec="aac", logger=None
+                )
         self.status.config(text="完成！")
         log('All done')
         messagebox.showinfo("完成", f"輸出於：{out_dir}")
