@@ -1,15 +1,15 @@
 version: 1.0.{build}
 image: Visual Studio 2022
 
-debug:
+environment:
   - BUILD_DEBUG=1
 
 install:
   - cmd: build_pyinstaller.bat
 
 build_script:
-  - echo Packaging done
+  - cmd: echo Packaging done
 
 artifacts:
-  - path: dist\voice_cutter_gui.dist\**
+  - path: distoice_cutter_gui.dist\**
     name: VoiceCutterGUI
