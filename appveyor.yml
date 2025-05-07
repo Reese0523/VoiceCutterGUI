@@ -6,16 +6,7 @@ install:
   - pip install nuitka moviepy whisper tqdm numpy imageio_ffmpeg
 
 build_script:
-  - python -m nuitka ^
-      --standalone ^
-      --onefile ^
-      --windows-console-mode=attach ^      # 改为 attach 模式
-      --enable-plugin=tk-inter ^
-      --assume-yes-for-downloads ^
-      --include-package=moviepy ^
-      --include-package=whisper ^
-      --include-package=imageio_ffmpeg ^
-      voice_cutter_gui.py
+  - python -m nuitka --standalone --onefile --windows-console-mode=attach --enable-plugin=tk-inter --assume-yes-for-downloads --include-package=moviepy --include-package=whisper --include-package=imageio_ffmpeg voice_cutter_gui.py
 
 artifacts:
   - path: voice_cutter_gui.exe
