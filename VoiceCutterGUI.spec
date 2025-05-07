@@ -1,47 +1,34 @@
-# -*- mode: python ; coding: utf-8 -*-
-from PyInstaller.utils.hooks import collect_all
-
-datas = []
-binaries = []
-hiddenimports = []
-tmp_ret = collect_all('whisper')
-datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
-tmp_ret = collect_all('imageio_ffmpeg')
-datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
-
+# -*- mode: python -*-
+block_cipher = None
 
 a = Analysis(
     ['voice_cutter_gui.py'],
-    pathex=[],
-    binaries=binaries,
-    datas=datas,
-    hiddenimports=hiddenimports,
-    hookspath=['hooks'],
-    hooksconfig={},
+    pathex=['.'],
+    datas=[],
+    hiddenimports=['moviepy.editor','whisper','tqdm'],
+    hookspath=[],
     runtime_hooks=[],
     excludes=[],
-    noarchive=False,
-    optimize=0,
 )
-pyz = PYZ(a.pure)
-
+p = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 exe = EXE(
-    pyz,
+    p,
     a.scripts,
-    a.binaries,
-    a.datas,
     [],
-    name='VoiceCutterGUI',
+    exclude_binaries=True,
+    name='voice_cutter_gui',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    upx_exclude=[],
-    runtime_tmpdir=None,
-    console=False,
-    disable_windowed_traceback=False,
-    argv_emulation=False,
-    target_arch=None,
-    codesign_identity=None,
-    entitlements_file=None,
+    console=True,
+)
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=True,
+    name='voice_cutter_gui.dist'
 )
