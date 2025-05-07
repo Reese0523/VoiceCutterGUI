@@ -1,13 +1,10 @@
 @echo off
-REM —— 1. 若无 venv，就建一个
 if not exist venv python -m venv venv
 call venv\Scripts\activate.bat
-
-REM —— 2. 安装/升级 pip & Nuitka
 python -m pip install --upgrade pip
 python -m pip install nuitka moviepy whisper tqdm numpy imageio_ffmpeg
 
-REM —— 3. 用 Nuitka 编译成 single-file EXE
+REM 关键改动：用 attach 而非 disable
 python -m nuitka ^
   --standalone ^
   --onefile ^
@@ -20,6 +17,6 @@ python -m nuitka ^
   voice_cutter_gui.py
 
 echo.
-echo Build finished! EXE is at:
+echo Build finished! EXE at:
 echo    %~dp0voice_cutter_gui.exe
 pause
