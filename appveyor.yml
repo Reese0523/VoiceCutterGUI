@@ -1,17 +1,15 @@
 version: 1.0.{build}
 image: Visual Studio 2022
 
+debug:
+  - BUILD_DEBUG=1
+
 install:
-  - python -m pip install --upgrade pip
-  - pip install nuitka moviepy whisper tqdm numpy imageio_ffmpeg
+  - cmd: build_pyinstaller.bat
 
 build_script:
-  # one-dir packaging，輸出到 dist 目錄
-  - python -m nuitka --standalone --output-dir=dist --windows-console-mode=attach \
-      --enable-plugin=tk-inter --assume-yes-for-downloads \
-      --include-package=moviepy --include-package=whisper --include-package=imageio_ffmpeg \
-      voice_cutter_gui.py
+  - echo Packaging done
 
 artifacts:
   - path: dist\voice_cutter_gui.dist\**
-    name: VoiceCutterGUI_Dist
+    name: VoiceCutterGUI
