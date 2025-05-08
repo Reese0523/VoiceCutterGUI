@@ -1,40 +1,25 @@
-# appveyor.yml
 version: 1.0.{build}
 image: Visual Studio 2022
 
 environment:
   PYTHON: C:\Python311
-  # 把 Python 和 Scripts 加到 PATH
   PATH: C:\Python311\Scripts;C:\Python311;%PATH%
 
 install:
   # 升級 pip
-  - cmd: "%PYTHON%\python.exe" -m pip install --upgrade pip
+  - cmd: '%PYTHON%\python.exe -m pip install --upgrade pip'
   # 安裝打包所需套件
-  - cmd: "%PYTHON%\python.exe" -m pip install ^
-      pyinstaller ^
-      pyinstaller-hooks-contrib ^
-      moviepy ^
-      whisper ^
-      tqdm ^
-      numpy ^
-      imageio_ffmpeg
-  # 呼叫你原本的 build_pyinstaller.bat 來產生 dist
-  - cmd: call build_pyinstaller.bat
+  - cmd: '%PYTHON%\python.exe -m pip install pyinstaller pyinstaller-hooks-contrib moviepy whisper tqdm numpy imageio_ffmpeg'
+  # 執行你的打包腳本
+  - cmd: 'call build_pyinstaller.bat'
 
 build:
-  # 若 dist 還沒產生就 fail 掉
-  - cmd: |
-      if not exist dist (
-        echo [Error] dist 資料夾不存在，請確認 build_pyinstaller.bat 是否真的跑過且有產出
-        exit 1
-      )
-  # 進入 dist 執行 --help 並輸出到 help_output.txt
-  - cmd: |
-      cd dist
-      .\voice_cutter_gui.exe --help > help_output.txt 2>&1
+  # 確認 dist 資料夾存在，否則失敗
+  - cmd: 'if not exist dist ( echo [Error] dist 資料夾不存在，請確認 build_pyinstaller.bat 是否真的跑過且有產出 && exit 1 )'
+  # 進入 dist 並收集 --help 輸出
+  - cmd: 'cd dist && .\voice_cutter_gui.exe --help > help_output.txt 2>&1'
 
 artifacts:
-  # 把整個 dist 資料夾上傳
+  # 上傳整個 dist 內容
   - path: dist\*
     name: dist
