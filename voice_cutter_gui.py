@@ -3,9 +3,8 @@ import sys
 import os
 import threading
 import logging
-import traceback
 
-# 設定全局日誌：捕捉未處理異常或打包後的錯誤
+# 全局錯誤日誌設定
 logging.basicConfig(
     filename='voice_cutter_gui.log',
     level=logging.ERROR,
