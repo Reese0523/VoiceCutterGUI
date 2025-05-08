@@ -1,98 +1,83 @@
+# -----------------------------------------------------------------------------
+# voice_cutter_gui.py — 修正 PyInstaller 单文件运行时 ctypes 加载问题
+# -----------------------------------------------------------------------------
+
 import sys
 import ctypes
 
-# 如果是在 PyInstaller 打包后的“frozen”环境里，恢复原生的 CDLL
-if getattr(sys, 'frozen', False):
+# 如果程序是被 PyInstaller 冷冻（--onefile 或 --standalone）后运行，
+# 则将 ctypes.CDLL 恢复为原始实现，避免 loader 传入 None 导致导入失败。
+if getattr(sys, "frozen", False):
     try:
-        # PyInstaller 自己的 loader 会把原生 CDLL 存到这里
         from PyInstaller.loader import pyimod03_ctypes
         ctypes.CDLL = pyimod03_ctypes.OriginalCDLL
-    except Exception:
-        # 哪怕找不到也不要让它挂
+    except (ImportError, AttributeError):
+        # 如果导入失败，则忽略，继续使用默认 ctypes.CDLL
         pass
 
-# 正常导入 Whisper 以及其他依赖
-import whisper
 import os
-import sys
-import traceback
-
-# 日誌檔路徑
-base_dir = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.dirname(__file__)
-LOG = os.path.join(base_dir, 'run_debug.log')
-
-def log(msg):
-    try:
-        with open(LOG, 'a', encoding='utf-8') as f:
-            f.write(msg + '\n')
-    except:
-        pass
-
-log(f"==== START {'EXE' if getattr(sys, 'frozen', False) else 'SCRIPT'} ====")
-
-# 捕獲未處理例外
-sys.excepthook = lambda t, v, tb: (log('----- UNCAUGHT -----'), traceback.print_exception(t, v, tb, file=open(LOG, 'a', encoding='utf-8')))
-
-log('Importing modules...')
 import threading
 import tkinter as tk
 from tkinter import filedialog, messagebox
+from moviepy.editor import VideoFileClip, concatenate_videoclips, AudioFileClip
 import whisper
-from moviepy.editor import VideoFileClip, concatenate_videoclips
-log('Imports done')
 
 class VoiceCutterGUI:
     def __init__(self, root):
-        root.title("VoiceCutter GUI")
-        tk.Button(root, text="選資料夾", command=self.select_folder).pack(pady=10)
-        tk.Button(root, text="開始處理", command=self.start).pack(pady=10)
-        self.status = tk.Label(root, text="尚未選擇")
-        self.status.pack(pady=10)
+        self.root = root
+        root.title("VoiceCutter 批次無人聲剪輯")
+        tk.Button(root, text="選擇資料夾", command=self.select_folder).pack(padx=20, pady=10)
+        tk.Button(root, text="開始處理", command=self.start_processing).pack(padx=20, pady=10)
+        self.status = tk.Label(root, text="尚未選擇資料夾")
+        self.status.pack(padx=20, pady=10)
         self.folder = None
-        log('Loading Whisper model...')
+        # 加载 Whisper 模型（可改为 "small"/"medium"/"large"）
         self.model = whisper.load_model("base")
-        log('Model loaded')
-
+    
     def select_folder(self):
-        f = filedialog.askdirectory()
-        if f:
-            self.folder = f
-            self.status['text'] = f
-            log(f"Folder selected: {f}")
-
-    def start(self):
+        self.folder = filedialog.askdirectory(title="請選擇影片資料夾")
+        if self.folder:
+            self.status.config(text=f"已選擇：{self.folder}")
+    
+    def start_processing(self):
         if not self.folder:
-            messagebox.showwarning("警告", "請選擇資料夾！")
+            messagebox.showwarning("警告", "請先選擇資料夾！")
             return
-        threading.Thread(target=self.process, daemon=True).start()
+        threading.Thread(target=self.process_folder, daemon=True).start()
+    
+    def process_folder(self):
+        out_dir = os.path.join(self.folder, "output")
+        os.makedirs(out_dir, exist_ok=True)
+        files = [f for f in os.listdir(self.folder) if f.lower().endswith(".mp4")]
+        for fname in files:
+            self.status.config(text=f"處理：{fname}")
+            in_path = os.path.join(self.folder, fname)
+            clip = VideoFileClip(in_path)
+            audio = clip.audio
+            # 臨時存檔，讓 Whisper 辨識
+            tmp_wav = os.path.join(self.folder, "__tmp.wav")
+            audio.write_audiofile(tmp_wav, logger=None)
+            result = self.model.transcribe(tmp_wav, word_timestamps=False)
+            os.remove(tmp_wav)
+            # 將有聲段落合併
+            segments = []
+            for seg in result["segments"]:
+                start, end = seg["start"], seg["end"]
+                segments.append(clip.subclip(start, end))
+            if segments:
+                final = concatenate_videoclips(segments)
+                out_path = os.path.join(out_dir, fname)
+                final.write_videofile(
+                    out_path,
+                    codec="libx264",
+                    audio_codec="aac",
+                    threads=4,
+                    logger=None
+                )
+        self.status.config(text="全部完成！")
+        messagebox.showinfo("完成", f"所有影片已輸出到：{out_dir}")
 
-    def process(self):
-        log(f"Processing {self.folder}")
-        out = os.path.join(self.folder, 'output')
-        os.makedirs(out, exist_ok=True)
-        for fn in os.listdir(self.folder):
-            if fn.lower().endswith('.mp4'):
-                log(f"File: {fn}")
-                self.status['text'] = fn
-                clip = VideoFileClip(os.path.join(self.folder, fn))
-                tmp = os.path.join(self.folder, '_tmp.wav')
-                clip.audio.write_audiofile(tmp, logger=None)
-                try:
-                    r = self.model.transcribe(tmp)
-                except Exception as e:
-                    log(f"Transcribe error: {e}")
-                    continue
-                os.remove(tmp)
-                segs = [clip.subclip(s['start'], s['end']) for s in r.get('segments', [])]
-                if segs:
-                    final = concatenate_videoclips(segs)
-                    final.write_videofile(os.path.join(out, fn), codec="libx264", audio_codec="aac", logger=None)
-        self.status['text'] = "完成"
-        log('Done')
-        messagebox.showinfo("完成", f"輸出: {out}")
-
-if __name__ == '__main__':
-    log('Launching GUI')
+if __name__ == "__main__":
     root = tk.Tk()
-    VoiceCutterGUI(root)
+    app = VoiceCutterGUI(root)
     root.mainloop()
