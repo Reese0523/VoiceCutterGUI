@@ -1,23 +1,26 @@
-# AppVeyor CI 設定檔
+# 使用 Visual Studio 2022 環境
 image: Visual Studio 2022
 
+# 指定要用的 Python 位置
 environment:
-  # 指定要用哪一版 Python
-  PYTHON: "C:\\Python311"
+  PYTHON: 'C:\Python311'
 
+# 安裝階段：升級 pip 並安裝所需套件
 install:
-  - cmd: set PATH=%PYTHON%;%PYTHON%\Scripts;%PATH%
-  - cmd: "%PYTHON%\\python.exe" -m pip install --upgrade pip
-  - cmd: pip install pyinstaller moviepy whisper tqdm numpy imageio_ffmpeg
+  - cmd: '%PYTHON%\python.exe -m pip install --upgrade pip'
+  - cmd: '%PYTHON%\python.exe -m pip install pyinstaller moviepy whisper tqdm numpy imageio_ffmpeg'
 
+# 打包階段：呼叫下方 bat 腳本
 build:
-  # 呼叫下方提供的打包腳本
-  - cmd: call build_pyinstaller.bat
+  - cmd: 'call build_pyinstaller.bat'
 
+# 測試階段：執行 exe 並將輸出與錯誤都重導到日誌
 test:
-  # 執行產出的 exe，將標準輸出 & 錯誤都導到日誌
-  - cmd: dist\voice_cutter_gui.exe --help > voice_cutter_gui.log 2>&1 || echo "執行失敗，詳見 voice_cutter_gui.log"
+  - cmd: '%PYTHON%\python.exe dist\voice_cutter_gui.exe --help > voice_cutter_gui.log 2>&1 || echo 執行失敗，詳見 voice_cutter_gui.log'
 
+# 收集產物：執行檔與日誌
 artifacts:
   - path: dist\voice_cutter_gui.exe
+    name: voice_cutter_gui.exe
   - path: voice_cutter_gui.log
+    name: voice_cutter_gui.log
