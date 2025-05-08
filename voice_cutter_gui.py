@@ -1,3 +1,18 @@
+import sys
+import ctypes
+
+# 如果是在 PyInstaller 打包后的“frozen”环境里，恢复原生的 CDLL
+if getattr(sys, 'frozen', False):
+    try:
+        # PyInstaller 自己的 loader 会把原生 CDLL 存到这里
+        from PyInstaller.loader import pyimod03_ctypes
+        ctypes.CDLL = pyimod03_ctypes.OriginalCDLL
+    except Exception:
+        # 哪怕找不到也不要让它挂
+        pass
+
+# 正常导入 Whisper 以及其他依赖
+import whisper
 import os
 import sys
 import traceback
