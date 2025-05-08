@@ -1,26 +1,28 @@
-# 使用 Visual Studio 2022 環境
-image: Visual Studio 2022
+# appveyor.yml
+image: Visual Studio 2022   # 或者 VS2019，根据你的需求
 
-# 指定 Python 路徑
+# 环境变量必须是 mapping，不是 list
 environment:
-  PYTHON: 'C:\Python311'
+  PYTHON: C:\Python311
 
-# 安裝相依套件
 install:
-  - '%PYTHON%\python.exe -m pip install --upgrade pip'
-  - '%PYTHON%\python.exe -m pip install pyinstaller moviepy whisper tqdm numpy imageio_ffmpeg'
+  # 更新 pip
+  - "%PYTHON%\\python.exe -m pip install --upgrade pip"
+  # 把 Scripts 放到 PATH，才能调用 pyinstaller.exe、imageio_download_bin.exe 等
+  - set PATH=%PYTHON%\\Scripts;%PATH%
+  # 安装所有打包需要的包
+  - "%PYTHON%\\python.exe -m pip install pyinstaller pyinstaller-hooks-contrib moviepy whisper tqdm numpy imageio_ffmpeg"
 
-# 打包腳本（呼叫自訂的 build_pyinstaller.bat）
 build_script:
-  - 'call build_pyinstaller.bat'
+  # 调用你的打包脚本
+  - call build_pyinstaller.bat
 
-# 測試腳本：執行 exe 並將輸出／錯誤導入日誌
 test_script:
-  - '%PYTHON%\python.exe dist\voice_cutter_gui.exe --help > voice_cutter_gui.log 2>&1 || echo 執行失敗，詳見 voice_cutter_gui.log'
+  # 用 --help 验证 exe 能正常启动，否则报错退出
+  - cmd: dist\voice_cutter_gui.exe --help > voice_cutter_gui.log 2>&1
+    fail_on_exit: true
 
-# 收集產物：執行檔和日誌
 artifacts:
-  - path: dist\voice_cutter_gui.exe
-    name: voice_cutter_gui.exe
+  # 把 help 输出作为日志下载
   - path: voice_cutter_gui.log
-    name: voice_cutter_gui.log
+    name: help_log
