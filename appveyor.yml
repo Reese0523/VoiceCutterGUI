@@ -1,25 +1,37 @@
-version: 1.0.{build}
+# appveyor.yml
 image: Visual Studio 2022
 
 environment:
-  PYTHON: C:\Python311
-  PATH: C:\Python311\Scripts;C:\Python311;%PATH%
+  matrix:
+    - PYTHON: "C:\\Python311"
 
 install:
-  # 升級 pip
-  - cmd: '%PYTHON%\python.exe -m pip install --upgrade pip'
-  # 安裝打包所需套件
-  - cmd: '%PYTHON%\python.exe -m pip install pyinstaller pyinstaller-hooks-contrib moviepy whisper tqdm numpy imageio_ffmpeg'
-  # 執行你的打包腳本
-  - cmd: 'call build_pyinstaller.bat'
+  - cmd: >-
+      set PATH=%PYTHON%\\Scripts;%PATH%
+  - cmd: >-
+      "%PYTHON%\\python.exe" -m pip install --upgrade pip
+  - cmd: >-
+      "%PYTHON%\\python.exe" -m pip install ^
+        pyinstaller ^
+        pyinstaller-hooks-contrib ^
+        moviepy ^
+        whisper ^
+        tqdm ^
+        numpy ^
+        imageio_ffmpeg
 
-build:
-  # 確認 dist 資料夾存在，否則失敗
-  - cmd: 'if not exist dist ( echo [Error] dist 資料夾不存在，請確認 build_pyinstaller.bat 是否真的跑過且有產出 && exit 1 )'
-  # 進入 dist 並收集 --help 輸出
-  - cmd: 'cd dist && .\voice_cutter_gui.exe --help > help_output.txt 2>&1'
+build_script:
+  # 這裡呼叫你的打包腳本
+  - cmd: >-
+      build_pyinstaller.bat
 
-artifacts:
-  # 上傳整個 dist 內容
-  - path: dist\*
-    name: dist
+test_script:
+  # 確保 dist 資料夾存在再執行 help 測試
+  - cmd: >-
+      if exist dist (
+        cd dist &&
+        .\voice_cutter_gui.exe --help > help_output.txt 2>&1
+      ) else (
+        echo "ERROR: dist 資料夾不存在" &&
+        exit 1
+      )
