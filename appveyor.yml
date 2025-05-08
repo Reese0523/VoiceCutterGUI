@@ -6,15 +6,12 @@ environment:
     - PYTHON: "C:\\Python312"
 
 install:
-  # 升级 pip 并安装打包所需的依赖
-  - "%PYTHON%\\python.exe" -m pip install --upgrade pip
-  - "%PYTHON%\\python.exe" -m pip install pyinstaller moviepy whisper tqdm numpy imageio_ffmpeg
+  - cmd: "%PYTHON%\\python.exe -m pip install --upgrade pip"
+  - cmd: "%PYTHON%\\python.exe -m pip install pyinstaller moviepy whisper tqdm numpy imageio_ffmpeg"
 
 script:
-  # 调用打包脚本
-  - call build_pyinstaller.bat
+  - cmd: build_pyinstaller.bat
 
 artifacts:
-  # 上传 dist\voice_cutter_gui.exe
   - path: dist\voice_cutter_gui.exe
     name: voice_cutter_gui.exe
