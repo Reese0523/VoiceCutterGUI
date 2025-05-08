@@ -1,4 +1,3 @@
-# appveyor.yml
 image: Visual Studio 2022
 
 environment:
@@ -9,17 +8,17 @@ install:
   # 把 Scripts 加到 PATH
   - cmd: set PATH=%PYTHON%\Scripts;%PATH%
   # 更新 pip
-  - cmd: "%PYTHON%\python.exe" -m pip install --upgrade pip
-  # 安裝所有打包所需套件（單行列出即可）
+  - cmd: %PYTHON%\python.exe -m pip install --upgrade pip
+  # 安裝所有打包所需套件（單行列出）
   - cmd: >
-      "%PYTHON%\python.exe" -m pip install pyinstaller pyinstaller-hooks-contrib moviepy whisper tqdm numpy imageio_ffmpeg
+      %PYTHON%\python.exe -m pip install pyinstaller pyinstaller-hooks-contrib moviepy whisper tqdm numpy imageio_ffmpeg
 
 build_script:
-  # 呼叫你現有的打包批次檔
+  # 執行你原本的 build_pyinstaller.bat
   - cmd: build_pyinstaller.bat
 
 test_script:
-  # 確保 dist 資料夾存在，再執行 --help 將輸出導到 help_output.txt
+  # 確認 dist 資料夾，再執行 --help 並把輸出導到 help_output.txt
   - cmd: >
       if exist dist (
         cd dist && .\voice_cutter_gui.exe --help > help_output.txt 2>&1
