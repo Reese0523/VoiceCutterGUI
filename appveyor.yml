@@ -1,31 +1,40 @@
 # appveyor.yml
-image: Visual Studio 2022   # 或者 VS2019，根据你的需求
+version: 1.0.{build}
+image: Visual Studio 2022
 
-# 环境变量必须是 mapping，不是 list
 environment:
   PYTHON: C:\Python311
+  # 把 Python 和 Scripts 加到 PATH
+  PATH: C:\Python311\Scripts;C:\Python311;%PATH%
 
 install:
-  # 更新 pip
-  - "%PYTHON%\\python.exe -m pip install --upgrade pip"
-  # 把 Scripts 放到 PATH，才能调用 pyinstaller.exe、imageio_download_bin.exe 等
-  - set PATH=%PYTHON%\\Scripts;%PATH%
-  # 安装所有打包需要的包
-  - "%PYTHON%\\python.exe -m pip install pyinstaller pyinstaller-hooks-contrib moviepy whisper tqdm numpy imageio_ffmpeg"
+  # 升級 pip
+  - cmd: "%PYTHON%\python.exe" -m pip install --upgrade pip
+  # 安裝打包所需套件
+  - cmd: "%PYTHON%\python.exe" -m pip install ^
+      pyinstaller ^
+      pyinstaller-hooks-contrib ^
+      moviepy ^
+      whisper ^
+      tqdm ^
+      numpy ^
+      imageio_ffmpeg
+  # 呼叫你原本的 build_pyinstaller.bat 來產生 dist
+  - cmd: call build_pyinstaller.bat
 
-build_script:
-  # 调用你的打包脚本
-  #- call build_pyinstaller.bat
-- ps: |
+build:
+  # 若 dist 還沒產生就 fail 掉
+  - cmd: |
+      if not exist dist (
+        echo [Error] dist 資料夾不存在，請確認 build_pyinstaller.bat 是否真的跑過且有產出
+        exit 1
+      )
+  # 進入 dist 執行 --help 並輸出到 help_output.txt
+  - cmd: |
       cd dist
-      # 把 --help 的輸出導到 help_output.txt，就不會和 logger 的檔名衝突
       .\voice_cutter_gui.exe --help > help_output.txt 2>&1
-      
-test_script:
-  # 執行 help，但無論回傳碼都當作成功（0）處理
-  - cmd: dist\voice_cutter_gui.exe --help > voice_cutter_gui.log 2>&1 || exit 0
 
 artifacts:
-  # 把 help 输出作为日志下载
-  - path: voice_cutter_gui.log
-    name: help_log
+  # 把整個 dist 資料夾上傳
+  - path: dist\*
+    name: dist
