@@ -1,3 +1,4 @@
+# appveyor.yml
 image: Visual Studio 2022
 
 environment:
@@ -5,15 +6,15 @@ environment:
     - PYTHON: "C:\\Python312"
 
 install:
-  # 先升级 pip，再安装打包所需的依赖
+  # 升级 pip 并安装打包所需的依赖
   - "%PYTHON%\\python.exe" -m pip install --upgrade pip
   - "%PYTHON%\\python.exe" -m pip install pyinstaller moviepy whisper tqdm numpy imageio_ffmpeg
 
 script:
-  # 调用我们上面写的打包脚本
+  # 调用打包脚本
   - call build_pyinstaller.bat
 
 artifacts:
-  # 把最终的单文件 exe 上传为构建产物
+  # 上传 dist\voice_cutter_gui.exe
   - path: dist\voice_cutter_gui.exe
     name: voice_cutter_gui.exe
