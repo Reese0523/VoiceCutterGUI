@@ -1,45 +1,23 @@
-# 版本號，會顯示在 AppVeyor 頁面上
-version: 1.0.{build}
-
-# 使用的映像檔 (建議選擇含有預裝 Python 的映像)
+# AppVeyor CI 設定檔
 image: Visual Studio 2022
 
-# 環境變數，這裡示範同時測試多個 Python 版本
 environment:
-  matrix:
-    - PYTHON: "C:\\Python312"
-    - PYTHON: "C:\\Python311"
+  # 指定要用哪一版 Python
+  PYTHON: "C:\\Python311"
 
-# 安裝步驟
 install:
-  # 確保 Python 在 PATH 上
-  - set PATH=%PYTHON%;%PATH%
-  # 更新 pip 並安裝所有依賴
-  - python -m pip install --upgrade pip
-  - pip install nuitka moviepy whisper tqdm numpy imageio_ffmpeg
+  - cmd: set PATH=%PYTHON%;%PYTHON%\Scripts;%PATH%
+  - cmd: "%PYTHON%\\python.exe" -m pip install --upgrade pip
+  - cmd: pip install pyinstaller moviepy whisper tqdm numpy imageio_ffmpeg
 
-# 建置步驟
-build_script:
-  # 以 Nuitka 打包成單一 exe；必要時請加上你自己的參數
-  - python -m nuitka ^
-      --standalone ^
-      --onefile ^
-      --windows-console-mode=attach ^
-      --enable-plugin=tk-inter ^
-      --assume-yes-for-downloads ^
-      --include-package=moviepy ^
-      --include-package=whisper ^
-      --include-package=imageio_ffmpeg ^
-      voice_cutter_gui.py
+build:
+  # 呼叫下方提供的打包腳本
+  - cmd: call build_pyinstaller.bat
 
-# 如有測試腳本，可加在此處
-test_script:
-  # 範例：執行打包後的 exe，並檢查是否有顯示使用說明
-  - dist\voice_cutter_gui.exe --help
+test:
+  # 執行產出的 exe，將標準輸出 & 錯誤都導到日誌
+  - cmd: dist\voice_cutter_gui.exe --help > voice_cutter_gui.log 2>&1 || echo "執行失敗，詳見 voice_cutter_gui.log"
 
-# 打包完成後要保留的產出物，AppVeyor 會將它們上傳到 Artifacts
 artifacts:
   - path: dist\voice_cutter_gui.exe
-    name: voice_cutter_gui
-
-# 如需自訂快取、通知、佇列等，可再補充其他設定
+  - path: voice_cutter_gui.log
