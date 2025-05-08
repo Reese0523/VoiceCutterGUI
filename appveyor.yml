@@ -15,8 +15,12 @@ install:
 
 build_script:
   # 调用你的打包脚本
-  - call build_pyinstaller.bat
-
+  #- call build_pyinstaller.bat
+- ps: |
+      cd dist
+      # 把 --help 的輸出導到 help_output.txt，就不會和 logger 的檔名衝突
+      .\voice_cutter_gui.exe --help > help_output.txt 2>&1
+      
 test_script:
   # 執行 help，但無論回傳碼都當作成功（0）處理
   - cmd: dist\voice_cutter_gui.exe --help > voice_cutter_gui.log 2>&1 || exit 0
