@@ -3,35 +3,26 @@ image: Visual Studio 2022
 
 environment:
   matrix:
-    - PYTHON: "C:\\Python311"
+    - PYTHON: C:\Python311
 
 install:
-  - cmd: >-
-      set PATH=%PYTHON%\\Scripts;%PATH%
-  - cmd: >-
-      "%PYTHON%\\python.exe" -m pip install --upgrade pip
-  - cmd: >-
-      "%PYTHON%\\python.exe" -m pip install ^
-        pyinstaller ^
-        pyinstaller-hooks-contrib ^
-        moviepy ^
-        whisper ^
-        tqdm ^
-        numpy ^
-        imageio_ffmpeg
+  # 把 Scripts 加到 PATH
+  - cmd: set PATH=%PYTHON%\Scripts;%PATH%
+  # 更新 pip
+  - cmd: "%PYTHON%\python.exe" -m pip install --upgrade pip
+  # 安裝所有打包所需套件（單行列出即可）
+  - cmd: >
+      "%PYTHON%\python.exe" -m pip install pyinstaller pyinstaller-hooks-contrib moviepy whisper tqdm numpy imageio_ffmpeg
 
 build_script:
-  # 這裡呼叫你的打包腳本
-  - cmd: >-
-      build_pyinstaller.bat
+  # 呼叫你現有的打包批次檔
+  - cmd: build_pyinstaller.bat
 
 test_script:
-  # 確保 dist 資料夾存在再執行 help 測試
-  - cmd: >-
+  # 確保 dist 資料夾存在，再執行 --help 將輸出導到 help_output.txt
+  - cmd: >
       if exist dist (
-        cd dist &&
-        .\voice_cutter_gui.exe --help > help_output.txt 2>&1
+        cd dist && .\voice_cutter_gui.exe --help > help_output.txt 2>&1
       ) else (
-        echo "ERROR: dist 資料夾不存在" &&
-        exit 1
+        echo ERROR: dist 資料夾不存在 && exit 1
       )
